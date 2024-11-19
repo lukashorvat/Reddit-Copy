@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Info - Mini Reddit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            padding-top: 70px;
+            background-color: #f6f7f8;
+        }
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .user-card {
+            transition: transform 0.2s;
+        }
+        .user-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Mini Reddit</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/info.html">Info</a>
+                    </li>
+                    <li class="nav-item" id="postsNavItem" style="display: none;">
+                        <a class="nav-link" href="/posts.html">Posts</a>
+                    </li>
+                    <li class="nav-item" id="createPostNavItem" style="display: none;">
+                        <a class="nav-link" href="/submit.html">Create Post</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="authNav">
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="info-card mb-4">
+            <h2>Mini Reddit User Information</h2>
+            <div class="row" id="statsRow">
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <h3 id="totalUsers">-</h3>
+                        <p class="text-muted">Total Users</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <h3 id="totalPosts">-</h3>
+                        <p class="text-muted">Total Posts</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <h3 id="totalUpvotes">-</h3>
+                        <p class="text-muted">Total Upvotes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+    function checkAuthState() {
+    const userJson = localStorage.getItem('user');
+    const postsNavItem = document.getElementById('postsNavItem');
+    const createPostNavItem = document.getElementById('createPostNavItem');
+    const postsSection = document.getElementById('postsSection');
+    const loginHeader = document.getElementById('loginHeader');
+    
+    if (userJson) {
+        const user = JSON.parse(userJson);
+        createPostNavItem.style.display = 'block';
+        postsSection.style.display = 'block';
+        loginHeader.style.display = 'none';
+        
+        document.getElementById('authNav').innerHTML = `
+            <li class="nav-item">
+                <span class="nav-link">Welcome, ${user.username}</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile.html">View Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="logout()">Logout</a>
+            </li>
+        `;
+
+        // Load posts when logged in
+        loadPosts('all');
+    } else {
+        // Hide post-related elements
+        createPostNavItem.style.display = 'none';
+        postsSection.style.display = 'none';
+        loginHeader.style.display = 'block';
+        
+        // Clear any existing posts
+        document.getElementById('postsContainer').innerHTML = '';
+        
+        document.getElementById('authNav').innerHTML = `
+            <li class="nav-item">
+                <a class="nav-link" href="/login.html">Login</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/register.html">Register</a>
+            </li>
+        `;
+    }
+}
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+        async function loadInfo() {
+            try {
+                const response = await fetch('http://localhost:3000/api/info');
+                const info = await response.json();
+                document.getElementById('totalUsers').textContent = info.totalUsers;
+                document.getElementById('totalPosts').textContent = info.totalPosts;
+                document.getElementById('totalUpvotes').textContent = info.totalUpvotes;
+                const sortedUsers = info.users.sort((a, b) => b.upvotesReceived - a.upvotesReceived);
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+
+                sortedUsers.forEach(user => {
+                    userList.innerHTML += `
+                        <div class="col-md-4 mb-3">
+                            <div class="card user-card">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">${user.username}</h5>
+                                    <p class="card-text">
+                                        <span class="badge bg-primary">${user.posts} Posts</span>
+                                        <span class="badge bg-success">${user.upvotesReceived} Upvotes</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading info:', error);
+                alert('Error loading community information');
+            }
+        }
+        checkAuthState();
+        loadInfo();
+    </script>
+</body>
+</html>

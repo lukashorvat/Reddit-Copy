@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - Mini Reddit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            padding-top: 70px;
+            background-color: #f6f7f8;
+        }
+        .register-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Mini Reddit</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item" id="postsNavItem" style="display: none;">
+                        <a class="nav-link" href="/posts.html">Posts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/info.html">Info</a>
+                    </li>
+                    <li class="nav-item" id="createPostNavItem" style="display: none;">
+                        <a class="nav-link" href="/submit.html">Create Post</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="authNav">
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <script>
+    function checkAuthState() {
+    const userJson = localStorage.getItem('user');
+    const postsNavItem = document.getElementById('postsNavItem');
+    const createPostNavItem = document.getElementById('createPostNavItem');
+    const postsSection = document.getElementById('postsSection');
+    const loginHeader = document.getElementById('loginHeader');
+    
+    if (userJson) {
+        const user = JSON.parse(userJson);
+        createPostNavItem.style.display = 'block';
+        postsSection.style.display = 'block';
+        loginHeader.style.display = 'none';
+        
+        document.getElementById('authNav').innerHTML = `
+            <li class="nav-item">
+                <span class="nav-link">Welcome, ${user.username}</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile.html">View Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="logout()">Logout</a>
+            </li>
+        `;
+
+        // Load posts when logged in
+        loadPosts('all');
+    } else {
+        // Hide post-related elements
+        createPostNavItem.style.display = 'none';
+        postsSection.style.display = 'none';
+        loginHeader.style.display = 'block';
+        
+        // Clear any existing posts
+        document.getElementById('postsContainer').innerHTML = '';
+        
+        document.getElementById('authNav').innerHTML = `
+            <li class="nav-item">
+                <a class="nav-link" href="/login.html">Login</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/register.html">Register</a>
+            </li>
+        `;
+    }
+}
+    
+    function logout() {
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+    }
+    checkAuthState();
+    </script>
+
+    <div class="container">
+        <div class="register-form">
+            <h2 class="mb-4">Register</h2>
+            <div class="mb-3">
+                <input type="text" id="username" class="form-control" placeholder="Username">
+            </div>
+            <div class="mb-3">
+                <input type="password" id="password" class="form-control" placeholder="Password">
+            </div>
+            <button onclick="register()" class="btn btn-primary w-100">Register</button>
+        </div>
+    </div>
+
+    <script>
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    localStorage.setItem('user', JSON.stringify(user));
+                    window.location.href = '/posts.html';
+                } else {
+                    alert('Username already exists');
+                }
+            } catch (error) {
+                alert('Error registering. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
